@@ -1,0 +1,12 @@
+.env
+PID_file
+*.log
+*.json
+serviceComunicator
+*.sh
+deploy
+.vscode
+*.http
+.idea
+example
+coverprofile*

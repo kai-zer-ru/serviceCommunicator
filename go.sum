@@ -1,0 +1,11 @@
+github.com/go-sql-driver/mysql v1.4.1 h1:g24URVg0OFbNUTx9qqY1IRZ9D9z3iPyi5zKhQZpNwpA=
+github.com/go-sql-driver/mysql v1.4.1/go.mod h1:zAC/RDZ24gD3HViQzih4MyKcchzm+sOG5ZlKdlhCg5w=
+github.com/joho/godotenv v1.3.0/go.mod h1:7hK45KPybAkOC6peb+G5yklZfMxEjkZhHbwpqxOKXbg=
+github.com/kaizer666/goenvtools v1.0.0 h1:4FFPOTIxqwP38yAISZTiX8XO5VC+PHme4JFKxSLUoNI=
+github.com/kaizer666/goenvtools v1.0.0/go.mod h1:616LLYVUPFRtiy4TfpF4Qjyu9WBpkfbh5FbMuTw34/s=
+github.com/kaizer666/gologger v1.0.1 h1:WNHWV3+WB8dJxjhMhX2/+rc4jpnMmqUf+WaHZySIWWU=
+github.com/kaizer666/gologger v1.0.1/go.mod h1:+qpD72cG/S9j3fvrxAl60b4apMIlW30q8ZHhojeM35Q=
+github.com/kaizer666/log4go v1.0.0 h1:/boQObBjGG0aGtpRiEsDTLIbgVcjLNOufbg2oBwEN10=
+github.com/kaizer666/log4go v1.0.0/go.mod h1:/lyulKhkHeqXFariQ/rUPZhq4IB7N0oSxYFYQtfRS+s=
+github.com/kaizer666/serviceCommunicatorServer v1.1.0 h1:AOlRwsMrn/0FK0KtXzVLnGUcubApakxCfB8oxHkZf30=
+github.com/kaizer666/serviceCommunicatorServer v1.1.0/go.mod h1:8X98PGV9iRXlfCJcxY3eE1YT3iVJehcsXiNHLgbVx7A=
