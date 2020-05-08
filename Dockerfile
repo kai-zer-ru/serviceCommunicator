@@ -1,4 +1,4 @@
-FROM golang:1.14-alpine
+FROM golang:1.14
 WORKDIR /app
 ADD . .
 EXPOSE 4000
