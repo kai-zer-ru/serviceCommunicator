@@ -68,6 +68,27 @@ func writeService() {
 			globalServices.Locker.Lock()
 			delete(globalServices.Services, service.Name)
 			globalServices.Services[service.Name] = service
+			servicesFile, err := os.Open(servicesFileName)
+			if err != nil {
+				if os.IsNotExist(err) {
+					servicesFile, err = os.Create(servicesFileName)
+					if err != nil {
+						logger.Error("error Create servicesFile: %v", err)
+						panic(err)
+					}
+				} else {
+					logger.Error("error: %v", err)
+					panic(err)
+				}
+			}
+			data, err := json.Marshal(globalServices.Services)
+			if err != nil {
+				panic(err)
+			}
+			_, err = servicesFile.Write(data)
+			if err != nil {
+				panic(err)
+			}
 			globalServices.Locker.Unlock()
 		case <-writeServiceStopChannel:
 			return
