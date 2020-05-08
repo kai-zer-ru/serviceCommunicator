@@ -5,5 +5,5 @@ COPY go.mod go.sum .env ./
 RUN go mod download
 COPY . .
 RUN go build -o serviceCommunicator .
-EXPOSE 9309
+EXPOSE 4000
 CMD ["./serviceCommunicator"]
