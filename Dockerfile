@@ -1,5 +1,5 @@
 FROM golang:1.14
 WORKDIR /app
 ADD . .
-EXPOSE 4000
+EXPOSE 11111
 CMD ["./serviceCommunicator"]
