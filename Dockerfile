@@ -1,4 +1,4 @@
-FROM ubuntu:18.04
+FROM golang:1.14
 WORKDIR /app
 ADD . .
 EXPOSE 4000
