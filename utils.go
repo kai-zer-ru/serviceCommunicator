@@ -2,15 +2,12 @@ package serviceCommunicator
 
 import (
 	"encoding/json"
+	_ "github.com/go-sql-driver/mysql"
 	"os"
 	"os/signal"
-	"time"
-
-	_ "github.com/go-sql-driver/mysql"
 )
 
-func initConfig() {
-	logFileName := environment.GetEnvString("LOG_FILENAME", "main.log")
+func initConfig() error {
 	isDebug := environment.GetEnvBool("IS_DEBUG", false)
 	var LogLevel int
 	if isDebug {
@@ -18,11 +15,17 @@ func initConfig() {
 	} else {
 		LogLevel = environment.GetEnvInt("LOG_LEVEL", 7)
 	}
-	logger.SetLogLevel(LogLevel)
-	logger.SetLogFileName(logFileName)
-	logger.Init()
+	err := logger.SetLogLevel(LogLevel)
+	if err != nil {
+		return err
+	}
+	err = logger.Init()
+	if err != nil {
+		return err
+	}
 	servicesFileName = environment.GetEnvString("SERVICES_FILE_NAME", "services.json")
-	logger.Debug("Config readed")
+	logger.Debug("Config read")
+	return nil
 }
 
 func convertServiceToMap(service *serviceStruct) (map[string]interface{}, error) {
@@ -54,8 +57,6 @@ func signalListener() {
 		case <-quit:
 			server.GraceHandler()
 			return
-		case <-time.After(10 * time.Second):
-			checkServices()
 		}
 	}
 }

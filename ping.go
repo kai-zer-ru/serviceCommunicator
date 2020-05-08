@@ -52,12 +52,32 @@ func getService(w http.ResponseWriter, req *http.Request) {
 		_, _ = io.WriteString(w, `{"error": "no service"}`)
 		return
 	}
+	// проверяем адреса
 	var availableAddresses []string
 	for address, available := range service.Addresses {
-		if available {
+		logger.Debug("Check " + address)
+		resp, err := http.Get(address + "/ping")
+		if err != nil {
+			logger.Error("error: %v", err)
+			if available {
+				go sendUnavailableService(service.Name, address)
+				available = false
+			}
+		} else {
+			logger.Debug("Close " + address)
+			err = resp.Body.Close()
+			if err != nil {
+				logger.Error(fmt.Sprintf("Error close response %s/ping", address))
+				logger.Error("error: %v", err)
+			}
+			if !available {
+				go sendAvailableService(service.Name, address)
+				available = true
+			}
 			availableAddresses = append(availableAddresses, address)
 		}
 	}
+
 	rand.Seed(time.Now().Unix())
 	var address string
 	if len(availableAddresses) > 0 {
@@ -141,7 +161,7 @@ func registerService(w http.ResponseWriter, req *http.Request) {
 		serviceData.Commands = commands
 		serviceData.Addresses = make(map[string]bool)
 		serviceData.Addresses[serviceData.Address] = true
-		logger.Debug("serviceData = %v",serviceData)
+		logger.Debug("serviceData = %v", serviceData)
 		writeServiceChannel <- serviceData
 		_, _ = io.WriteString(w, `{"error": null}`)
 		return
