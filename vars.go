@@ -1,4 +1,4 @@
-package serviceCommunicator
+package main
 
 import (
 	"context"
@@ -26,7 +26,6 @@ var (
 	server                  serviceCommunicatorServer.ServerStruct
 	httpClient              = http.Client{Transport: &transport, Timeout: 2 * time.Second}
 	writeServiceChannel     = make(chan serviceStruct)
-	checkServiceChannel     = make(chan serviceStruct)
 	transport               = http.Transport{
 		DialContext:       dialContext,
 		DisableKeepAlives: true,

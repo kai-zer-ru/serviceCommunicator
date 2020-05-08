@@ -1,4 +1,4 @@
-package serviceCommunicator
+package main
 
 import (
 	"bytes"

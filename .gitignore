@@ -10,3 +10,4 @@ deploy
 .idea
 example
 coverprofile*
+serviceCommunicator
