@@ -232,8 +232,8 @@ func ping() {
 	server.StopFunctions = []func(){}
 	server.StopChannels = make([]*chan int, 0)
 	server.StopChannels = append(server.StopChannels, &checkServiceStopChannel, &writeServiceStopChannel)
-	var whereHost = environment.GetEnvString("WHERE_HOST", "")
-	port := environment.GetEnvString("PING_PORT", "8888")
+	var whereHost = environment.GetEnvString("DOCKER_HOST", "0.0.0.0")
+	port := environment.GetEnvString("DOCKER_PORT", "8888")
 	server.SetAddress(fmt.Sprintf("%s:%s", whereHost, port))
 	server.StartServer()
 }
