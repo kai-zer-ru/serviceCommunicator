@@ -9,3 +9,4 @@ github.com/kaizer666/log4go v1.0.0 h1:/boQObBjGG0aGtpRiEsDTLIbgVcjLNOufbg2oBwEN1
 github.com/kaizer666/log4go v1.0.0/go.mod h1:/lyulKhkHeqXFariQ/rUPZhq4IB7N0oSxYFYQtfRS+s=
 github.com/kaizer666/serviceCommunicatorServer v1.1.0 h1:AOlRwsMrn/0FK0KtXzVLnGUcubApakxCfB8oxHkZf30=
 github.com/kaizer666/serviceCommunicatorServer v1.1.0/go.mod h1:8X98PGV9iRXlfCJcxY3eE1YT3iVJehcsXiNHLgbVx7A=
+github.com/kaizer666/serviceCommunicatorServer v1.1.1/go.mod h1:8X98PGV9iRXlfCJcxY3eE1YT3iVJehcsXiNHLgbVx7A=
