@@ -22,6 +22,7 @@ type telegramStruct struct {
 }
 
 func (t *telegramStruct) sendMessageToTelegram() error {
+	logger.Info("start %s", funcName())
 	payloads := map[string]interface{}{
 		"chat_id":    t.Channel,
 		"text":       t.Message,
@@ -46,6 +47,7 @@ func (t *telegramStruct) sendMessageToTelegram() error {
 }
 
 func (t *telegramStruct) sendDocumentToTelegram() error {
+	logger.Info("start %s", funcName())
 	payloads := map[string]interface{}{
 		"chat_id":  t.Channel,
 		"document": t.RowData,
@@ -66,6 +68,7 @@ func (t *telegramStruct) sendDocumentToTelegram() error {
 }
 
 func (t *telegramStruct) sendImageToTelegram() error {
+	logger.Info("start %s", funcName())
 	payloads := map[string]interface{}{
 		"chat_id": t.Channel,
 		"photo":   t.PhotoURL,
@@ -87,6 +90,7 @@ func (t *telegramStruct) sendImageToTelegram() error {
 }
 
 func sendUnavailableService(serviceName, address string) {
+	logger.Info("start %s", funcName())
 	text := fmt.Sprintf("Сервис '%s' по адресу %s недоступен. Обратите внимание", serviceName, address)
 	fmt.Println(text)
 	telegram.Channel = 219701681
@@ -100,6 +104,7 @@ func sendUnavailableService(serviceName, address string) {
 }
 
 func sendAvailableService(serviceName, address string) {
+	logger.Info("start %s", funcName())
 	text := fmt.Sprintf("Сервис '%s' по адресу %s вновь доступен", serviceName, address)
 	fmt.Println(text)
 	telegram.Channel = 219701681

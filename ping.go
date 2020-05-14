@@ -13,6 +13,7 @@ import (
 )
 
 func deleteService(w http.ResponseWriter, req *http.Request) {
+	logger.Info("start %s", funcName())
 	if req.Method != "POST" {
 		_, _ = io.WriteString(w, `{"error": "request method is not post"}`)
 		return
@@ -42,6 +43,7 @@ func deleteService(w http.ResponseWriter, req *http.Request) {
 }
 
 func getService(w http.ResponseWriter, req *http.Request) {
+	logger.Info("start %s", funcName())
 	serviceName := req.URL.Query()["name"][0]
 	if serviceName == "" {
 		_, _ = io.WriteString(w, `{"error": "no name in request"}`)
@@ -98,6 +100,7 @@ func getService(w http.ResponseWriter, req *http.Request) {
 }
 
 func getServices(w http.ResponseWriter, _ *http.Request) {
+	logger.Info("start %s", funcName())
 	services := globalServices.Services
 	var response []map[string]interface{}
 	for _, service := range services {
@@ -118,6 +121,7 @@ func getServices(w http.ResponseWriter, _ *http.Request) {
 }
 
 func registerService(w http.ResponseWriter, req *http.Request) {
+	logger.Info("start %s", funcName())
 	if req.Method != "POST" {
 		_, _ = io.WriteString(w, `{"error": "request method is not post"}`)
 		return
@@ -177,6 +181,7 @@ func registerService(w http.ResponseWriter, req *http.Request) {
 }
 
 func ping() {
+	logger.Info("start %s", funcName())
 	server = serviceCommunicatorServer.ServerStruct{}
 	server.SetLogger(logger.GetLogger())
 	server.SetEnvironment(&environment)

@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/signal"
+	"runtime"
 )
 
 func initConfig() error {
@@ -30,6 +31,7 @@ func initConfig() error {
 }
 
 func convertServiceToMap(service *serviceStruct) (map[string]interface{}, error) {
+	logger.Info("start %s", funcName())
 	serviceMap := make(map[string]interface{})
 	serviceString, err := json.Marshal(service)
 	if err != nil {
@@ -50,7 +52,7 @@ func convertServiceToMap(service *serviceStruct) (map[string]interface{}, error)
 }
 
 func signalListener() {
-	logger.Debug("signalListener start")
+	logger.Info("start %s", funcName())
 	quit := make(chan os.Signal)
 	signal.Notify(quit, os.Interrupt)
 	for {
@@ -63,6 +65,7 @@ func signalListener() {
 }
 
 func writeService() {
+	logger.Info("start %s", funcName())
 	for {
 		select {
 		case service := <-writeServiceChannel:
@@ -82,4 +85,9 @@ func writeService() {
 			return
 		}
 	}
+}
+
+func funcName() string {
+	pc, _, _, _ := runtime.Caller(1)
+	return runtime.FuncForPC(pc).Name()
 }
