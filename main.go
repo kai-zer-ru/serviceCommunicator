@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"os"
 	"runtime"
+	"syscall"
 )
 
 func main() {
@@ -15,6 +16,9 @@ func main() {
 	runtime.GOMAXPROCS(numCPU)
 	fileDescriptor = flag.Int("fd", 0, "Server socket fileDescriptor")
 	flag.Parse()
+
+	logFile, _ := os.OpenFile(fmt.Sprintf("panic.%v.log", os.Getpid()), os.O_WRONLY|os.O_CREATE|os.O_SYNC|os.O_TRUNC, os.FileMode(0644))
+	_ = syscall.Dup2(int(logFile.Fd()), 2)
 
 	environment = GoEnvTools.GoEnv{}
 	_ = environment.InitEnv()
