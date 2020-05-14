@@ -64,7 +64,10 @@ func main() {
 	}
 	globalServices.Services = servicesData
 	go signalListener()
-	go writeService()
+	logger.Info("before writeService")
+	go func() {
+		writeService()
+	}()
 	logger.Info("before ping")
 	ping()
 }
