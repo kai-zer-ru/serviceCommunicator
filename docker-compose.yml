@@ -9,7 +9,7 @@ services:
     restart: always
     tty: true
     ports:
-      - 1111:1111
+      - "1111:1111"
     working_dir: /app
     volumes:
       - ./services.json:/app/services.json
