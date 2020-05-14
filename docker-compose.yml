@@ -1,0 +1,13 @@
+version: '3'
+services:
+  servicecommunicator:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: golang:1.14
+    container_name: service_communicator
+    restart: always
+    tty: true
+    working_dir: /app
+    volumes:
+      - ./services.json:/app/services.json
