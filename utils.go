@@ -74,10 +74,12 @@ func writeService() {
 			globalServices.Services[service.Name] = service
 			data, err := json.Marshal(globalServices.Services)
 			if err != nil {
+				globalServices.Locker.Unlock()
 				panic(err)
 			}
 			err = ioutil.WriteFile(servicesFileName, data, 0644)
 			if err != nil {
+				globalServices.Locker.Unlock()
 				panic(err)
 			}
 			globalServices.Locker.Unlock()
