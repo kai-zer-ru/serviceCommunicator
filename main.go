@@ -42,10 +42,12 @@ func main() {
 	servicesData := map[string]serviceStruct{}
 	data, err := redisCache.Get(serviceCommunicatorData)
 	if err == nil {
-		err = json.Unmarshal([]byte(data.(string)), &servicesData)
-		if err != nil {
-			logger.Error("error parse serviceCommunicatorData: %v", err)
-			servicesData = map[string]serviceStruct{}
+		if data != nil {
+			err = json.Unmarshal([]byte(data.(string)), &servicesData)
+			if err != nil {
+				logger.Error("error parse serviceCommunicatorData: %v", err)
+				servicesData = map[string]serviceStruct{}
+			}
 		}
 	}
 	globalServices.Services = servicesData
