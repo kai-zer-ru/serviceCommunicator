@@ -34,7 +34,11 @@ func main() {
 			fmt.Printf("Error while get services: %v", err)
 			return
 		}
-		fmt.Println(data.(string))
+		if data != nil {
+			fmt.Println(data.(string))
+			return
+		}
+		fmt.Println("No services data")
 		return
 	}
 
