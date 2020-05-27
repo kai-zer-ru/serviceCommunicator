@@ -2,21 +2,19 @@ package main
 
 import (
 	"context"
-	"net"
-	"net/http"
-	"os"
-	"time"
-
+	"github.com/kaizer666/RedisLibrary"
 	GoEnvTools "github.com/kaizer666/goenvtools"
 	GoLogger "github.com/kaizer666/gologger"
 	"github.com/kaizer666/serviceCommunicatorServer"
+	"net"
+	"net/http"
+	"time"
 )
 
 var (
 	globalServices          servicesStruct
 	telegram                telegramStruct
-	servicesFileName        string
-	servicesFile            *os.File
+	serviceCommunicatorData = "serviceCommunicatorData"
 	environment             GoEnvTools.GoEnv
 	logger                  GoLogger.Logger
 	fileDescriptor          *int
@@ -26,6 +24,7 @@ var (
 	server                  serviceCommunicatorServer.ServerStruct
 	httpClient              = http.Client{Transport: &transport, Timeout: 2 * time.Second}
 	writeServiceChannel     = make(chan serviceStruct)
+	redisCache              RedisLibrary.RedisType
 	transport               = http.Transport{
 		DialContext:       dialContext,
 		DisableKeepAlives: true,

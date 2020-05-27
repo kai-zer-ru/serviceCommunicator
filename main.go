@@ -5,7 +5,6 @@ import (
 	"flag"
 	"fmt"
 	GoEnvTools "github.com/kaizer666/goenvtools"
-	"io/ioutil"
 	"os"
 	"runtime"
 	"syscall"
@@ -17,7 +16,7 @@ func main() {
 	fileDescriptor = flag.Int("fd", 0, "Server socket fileDescriptor")
 	flag.Parse()
 
-	logFile, _ := os.OpenFile(fmt.Sprintf("panic.%v.log", os.Getpid()), os.O_WRONLY|os.O_CREATE|os.O_SYNC|os.O_TRUNC, os.FileMode(0644))
+	logFile, _ := os.OpenFile("panic.log", os.O_WRONLY|os.O_CREATE|os.O_SYNC|os.O_TRUNC, os.FileMode(0644))
 	_ = syscall.Dup2(int(logFile.Fd()), 2)
 
 	environment = GoEnvTools.GoEnv{}
@@ -28,37 +27,13 @@ func main() {
 		panic(err)
 	}
 
-	telegram = telegramStruct{}
-	telegram.BotToken = environment.GetEnvString("TELEGRAM_TOKEN", "")
-	servicesFileIsExist := true
-	servicesFile, err = os.Open(servicesFileName)
-	if err != nil {
-		if os.IsNotExist(err) {
-			servicesFileIsExist = false
-			servicesFile, err = os.Create(servicesFileName)
-			if err != nil {
-				logger.Error("error Create servicesFile: %v", err)
-				panic(err)
-			}
-		} else {
-			logger.Error("error: %v", err)
-			panic(err)
-		}
-	}
-	b, err := ioutil.ReadAll(servicesFile)
-	defer func() {
-		_ = servicesFile.Close()
-	}()
-	if err != nil {
-		logger.Error("error: %v", err)
-		panic(err)
-	}
 	globalServices = servicesStruct{}
 	servicesData := map[string]serviceStruct{}
-	if servicesFileIsExist {
-		err = json.Unmarshal(b, &servicesData)
+	data, err := redisCache.Get(serviceCommunicatorData)
+	if err == nil {
+		err = json.Unmarshal([]byte(data.(string)), &servicesData)
 		if err != nil {
-			logger.Error("error: %v", err)
+			logger.Error("error parse serviceCommunicatorData: %v", err)
 			servicesData = map[string]serviceStruct{}
 		}
 	}

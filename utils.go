@@ -3,7 +3,7 @@ package main
 import (
 	"encoding/json"
 	_ "github.com/go-sql-driver/mysql"
-	"io/ioutil"
+	"github.com/kaizer666/RedisLibrary"
 	"os"
 	"os/signal"
 	"runtime"
@@ -25,7 +25,18 @@ func initConfig() error {
 	if err != nil {
 		return err
 	}
-	servicesFileName = environment.GetEnvString("SERVICES_FILE_NAME", "services.json")
+	redisCache = RedisLibrary.RedisType{
+		Host:     environment.GetEnvString("REDIS_HOST", "127.0.0.1"),
+		Port:     environment.GetEnvUint32("REDIS_PORT", 6379),
+		Password: environment.GetEnvString("REDIS_PASSWORD", ""),
+		DB:       environment.GetEnvInt("REDIS_DATABASE", 0),
+	}
+	err = redisCache.Connect()
+	if err != nil {
+		return err
+	}
+	telegram = telegramStruct{}
+	telegram.BotToken = environment.GetEnvString("TELEGRAM_TOKEN", "")
 	logger.Debug("Config read")
 	return nil
 }
@@ -54,11 +65,15 @@ func convertServiceToMap(service *serviceStruct) (map[string]interface{}, error)
 func signalListener() {
 	logger.Info("start %s", funcName())
 	quit := make(chan os.Signal)
-	signal.Notify(quit, os.Interrupt)
+	signal.Notify(quit, os.Kill)
 	for {
 		select {
 		case <-quit:
-			server.GraceHandler()
+			data, err := json.Marshal(globalServices.Services)
+			if err == nil {
+				_, _ = redisCache.Set(serviceCommunicatorData, data)
+			}
+			server.GraceStop()
 			return
 		}
 	}
@@ -77,7 +92,7 @@ func writeService() {
 				globalServices.Locker.Unlock()
 				panic(err)
 			}
-			err = ioutil.WriteFile(servicesFileName, data, 0644)
+			_, err = redisCache.Set(serviceCommunicatorData, data)
 			if err != nil {
 				globalServices.Locker.Unlock()
 				panic(err)
