@@ -17,6 +17,8 @@ func initConfig() error {
 	} else {
 		LogLevel = environment.GetEnvInt("LOG_LEVEL", 7)
 	}
+	logFileName := environment.GetEnvString("LOG_FILE_NAME", "")
+	logger.SetLogFileName(logFileName)
 	err := logger.SetLogLevel(LogLevel)
 	if err != nil {
 		return err
