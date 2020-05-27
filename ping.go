@@ -1,17 +1,147 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/kaizer666/serviceCommunicatorServer"
 	"io"
 	"io/ioutil"
-	"math/rand"
 	"net/http"
-	"time"
-
-	"github.com/kaizer666/serviceCommunicatorServer"
 )
 
+func sendCommand(w http.ResponseWriter, req *http.Request) {
+	//sendCommandStruct
+	logger.Info("start %s", funcName())
+	if req.Method != "POST" {
+		_, _ = io.WriteString(w, `{"error": "request method is not post"}`)
+		return
+	}
+	decoder := json.NewDecoder(req.Body)
+	var commandData = sendCommandStruct{}
+	err := decoder.Decode(&commandData)
+	if err != nil {
+		logger.Error("error: %v", err)
+		_, _ = io.WriteString(w, fmt.Sprintf(`{"error": "%s"}`, err.Error()))
+		return
+	}
+	if commandData.DaemonName == "" {
+		_, _ = io.WriteString(w, `{"error": "no DaemonName in request"}`)
+		return
+	}
+	if commandData.Command == "" {
+		_, _ = io.WriteString(w, `{"error": "no Command in request"}`)
+		return
+	}
+	daemon, ok := globalServices.Services[commandData.DaemonName]
+	if !ok {
+		_, _ = io.WriteString(w, fmt.Sprintf(`{"error": "no daemon with name %s"}`, commandData.DaemonName))
+		return
+	}
+	var address = ""
+	var method = "GET"
+	var requiredParams []string
+	for _, command := range daemon.Commands {
+		if command.Name == commandData.Command {
+			address = getServiceAddress(&daemon)
+			method = command.Method
+			requiredParams = command.RequiredParams
+			break
+		}
+	}
+	if address == "" {
+		_, _ = io.WriteString(w, `{"error": "no address in daemons"}`)
+		return
+	}
+	for _, param := range requiredParams {
+		if _, ok := commandData.Params[param]; !ok {
+			_, _ = io.WriteString(w, `{"error": "no all required_params in request"}`)
+			return
+		}
+	}
+	if method == "GET" {
+		urlAddress := address + "/" + commandData.Command + "?"
+		for param, value := range commandData.Params {
+			urlAddress += fmt.Sprintf("%s=%s&", param, value)
+		}
+		if commandData.NeedResponse {
+			resp, err := http.Get(urlAddress)
+			if err != nil {
+				_, _ = io.WriteString(w, fmt.Sprintf(`{"error": "%v"}`, err))
+				return
+			}
+			responseData, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				_ = resp.Body.Close()
+				_, _ = io.WriteString(w, fmt.Sprintf(`{"error": "%v"}`, err))
+				return
+			}
+			_ = resp.Body.Close()
+			_, _ = io.WriteString(w, string(responseData))
+			return
+		}
+		go func() {
+			resp, err := http.Get(urlAddress)
+			if err != nil {
+				logger.Error("error: %v", err)
+				return
+			}
+			_ = resp.Body.Close()
+		}()
+		_, _ = io.WriteString(w, `{}`)
+		return
+	}
+	urlAddress := address + "/" + commandData.Command
+	if commandData.NeedResponse {
+		req, err := http.NewRequest("POST", urlAddress, nil)
+		if err != nil {
+			logger.Error("error: %v", err)
+			return
+		}
+		req.Header.Add("Content-Type", `application/json`)
+		params, marshalErr := json.Marshal(commandData.Params)
+		if marshalErr != nil {
+			logger.Error("error: %v", marshalErr)
+			return
+		}
+		req.Body = ioutil.NopCloser(bytes.NewBufferString(string(params)))
+		resp, err := httpClient.Do(req)
+		if err != nil {
+			_, _ = io.WriteString(w, fmt.Sprintf(`{"error": "%v"}`, err))
+			return
+		}
+		responseData, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			_ = resp.Body.Close()
+			_, _ = io.WriteString(w, fmt.Sprintf(`{"error": "%v"}`, err))
+			return
+		}
+		_ = resp.Body.Close()
+		_, _ = io.WriteString(w, string(responseData))
+		return
+	}
+	go func() {
+		req, err := http.NewRequest("POST", urlAddress, nil)
+		if err != nil {
+			logger.Error("error: %v", err)
+			return
+		}
+		req.Header.Add("Content-Type", `application/json`)
+		params, marshalErr := json.Marshal(commandData.Params)
+		if marshalErr != nil {
+			logger.Error("error: %v", marshalErr)
+			return
+		}
+		req.Body = ioutil.NopCloser(bytes.NewBufferString(string(params)))
+		resp, err := httpClient.Do(req)
+		if err != nil {
+			logger.Error("error: %v", err)
+			return
+		}
+		_ = resp.Body.Close()
+	}()
+	_, _ = io.WriteString(w, `{}`)
+}
 func deleteService(w http.ResponseWriter, req *http.Request) {
 	logger.Info("start %s", funcName())
 	if req.Method != "POST" {
@@ -95,36 +225,7 @@ func getService(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	// проверяем адреса
-	var availableAddresses []string
-	for address, available := range service.Addresses {
-		logger.Debug("Check " + address)
-		resp, err := http.Get(address + "/ping")
-		if err != nil {
-			logger.Error("error: %v", err)
-			if available {
-				go sendUnavailableService(service.Name, address)
-				available = false
-			}
-		} else {
-			logger.Debug("Close " + address)
-			err = resp.Body.Close()
-			if err != nil {
-				logger.Error(fmt.Sprintf("Error close response %s/ping", address))
-				logger.Error("error: %v", err)
-			}
-			if !available {
-				go sendAvailableService(service.Name, address)
-				available = true
-			}
-			availableAddresses = append(availableAddresses, address)
-		}
-	}
-
-	rand.Seed(time.Now().Unix())
-	var address string
-	if len(availableAddresses) > 0 {
-		address = availableAddresses[rand.Intn(len(availableAddresses))]
-	}
+	address := getServiceAddress(&service)
 
 	response := make(map[string]interface{})
 	response["address"] = address
@@ -231,6 +332,7 @@ func ping() {
 		"/getServices":     getServices,
 		"/deleteService":   deleteService,
 		"/deleteDaemon":    deleteDaemon,
+		"/sendCommand":     sendCommand,
 	}
 	server.Commands = []serviceCommunicatorServer.CommandStruct{
 		{
@@ -248,6 +350,11 @@ func ping() {
 				"address":     "address of service",
 			},
 			Method: "POST",
+			RequiredParams: []string{
+				"name",
+				"description",
+				"address",
+			},
 		},
 		{
 			Name:        "getService",
@@ -256,6 +363,9 @@ func ping() {
 				"name": "name of service",
 			},
 			Method: "GET",
+			RequiredParams: []string{
+				"name",
+			},
 		},
 		{
 			Name:        "getServices",
@@ -270,6 +380,9 @@ func ping() {
 				"name": "name of service",
 			},
 			Method: "POST",
+			RequiredParams: []string{
+				"name",
+			},
 		},
 		{
 			Name:        "deleteDaemon",
@@ -279,6 +392,25 @@ func ping() {
 				"address": "address of daemon",
 			},
 			Method: "POST",
+			RequiredParams: []string{
+				"name",
+				"address",
+			},
+		},
+		{
+			Name:        "sendCommand",
+			Description: "sendCommand",
+			Params: map[string]string{
+				"daemon_name":   "name of daemon",
+				"command":       "name of command",
+				"params":        "params to send",
+				"need_response": "need_response",
+			},
+			Method: "POST",
+			RequiredParams: []string{
+				"daemon_name",
+				"command",
+			},
 		},
 	}
 	server.SetHandlers(handlers)

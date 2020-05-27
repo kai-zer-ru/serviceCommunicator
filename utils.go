@@ -2,11 +2,15 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/kaizer666/RedisLibrary"
+	"math/rand"
+	"net/http"
 	"os"
 	"os/signal"
 	"runtime"
+	"time"
 )
 
 func initConfig() error {
@@ -109,4 +113,38 @@ func writeService() {
 func funcName() string {
 	pc, _, _, _ := runtime.Caller(1)
 	return runtime.FuncForPC(pc).Name()
+}
+
+func getServiceAddress(service *serviceStruct) string {
+	var availableAddresses []string
+	for address, available := range service.Addresses {
+		logger.Debug("Check " + address)
+		resp, err := http.Get(address + "/ping")
+		if err != nil {
+			logger.Error("error: %v", err)
+			if available {
+				go sendUnavailableService(service.Name, address)
+				available = false
+			}
+		} else {
+			logger.Debug("Close " + address)
+			err = resp.Body.Close()
+			if err != nil {
+				logger.Error(fmt.Sprintf("Error close response %s/ping", address))
+				logger.Error("error: %v", err)
+			}
+			if !available {
+				go sendAvailableService(service.Name, address)
+				available = true
+			}
+			availableAddresses = append(availableAddresses, address)
+		}
+	}
+
+	rand.Seed(time.Now().Unix())
+	var address string
+	if len(availableAddresses) > 0 {
+		address = availableAddresses[rand.Intn(len(availableAddresses))]
+	}
+	return address
 }
