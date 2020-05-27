@@ -34,7 +34,7 @@ func main() {
 			return
 		}
 		if data != nil {
-			fmt.Println(data.(string))
+			fmt.Println(string(data.([]byte)))
 			return
 		}
 		fmt.Println("No services data")
@@ -46,7 +46,7 @@ func main() {
 	data, err := redisCache.Get(serviceCommunicatorData)
 	if err == nil {
 		if data != nil {
-			err = json.Unmarshal([]byte(data.(string)), &servicesData)
+			err = json.Unmarshal(data.([]byte), &servicesData)
 			if err != nil {
 				logger.Error("error parse serviceCommunicatorData: %v", err)
 				servicesData = map[string]serviceStruct{}
