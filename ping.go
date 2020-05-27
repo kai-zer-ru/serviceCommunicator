@@ -42,6 +42,46 @@ func deleteService(w http.ResponseWriter, req *http.Request) {
 	_, _ = io.WriteString(w, `{"error": "null"}`)
 }
 
+func deleteDaemon(w http.ResponseWriter, req *http.Request) {
+	logger.Info("start %s", funcName())
+	if req.Method != "POST" {
+		_, _ = io.WriteString(w, `{"error": "request method is not post"}`)
+		return
+	}
+	decoder := json.NewDecoder(req.Body)
+	var serviceData = map[string]interface{}{}
+	err := decoder.Decode(&serviceData)
+	if err != nil {
+		logger.Error("error: %v", err)
+		_, _ = io.WriteString(w, fmt.Sprintf(`{"error": "%s"}`, err.Error()))
+		return
+	}
+	serviceName, ok := serviceData["name"]
+	if !ok {
+		_, _ = io.WriteString(w, `{"error": "no name in request"}`)
+		return
+	}
+	serviceAddress, ok := serviceData["address"]
+	if !ok {
+		_, _ = io.WriteString(w, `{"error": "no address in request"}`)
+		return
+	}
+	_, ok = globalServices.Services[serviceName.(string)]
+	if !ok {
+		_, _ = io.WriteString(w, `{"error": "no service"}`)
+		return
+	}
+	globalServices.Locker.Lock()
+	for address := range globalServices.Services[serviceName.(string)].Addresses {
+		if address == serviceAddress.(string) {
+			delete(globalServices.Services[serviceName.(string)].Addresses, address)
+			break
+		}
+	}
+	globalServices.Locker.Unlock()
+	_, _ = io.WriteString(w, `{"error": "null"}`)
+}
+
 func getService(w http.ResponseWriter, req *http.Request) {
 	logger.Info("start %s", funcName())
 	serviceName := req.URL.Query()["name"][0]
@@ -190,6 +230,7 @@ func ping() {
 		"/getService":      getService,
 		"/getServices":     getServices,
 		"/deleteService":   deleteService,
+		"/deleteDaemon":    deleteDaemon,
 	}
 	server.Commands = []serviceCommunicatorServer.CommandStruct{
 		{
@@ -227,6 +268,15 @@ func ping() {
 			Description: "deleteService",
 			Params: map[string]string{
 				"name": "name of service",
+			},
+			Method: "POST",
+		},
+		{
+			Name:        "deleteDaemon",
+			Description: "deleteDaemon",
+			Params: map[string]string{
+				"name":    "name of daemon",
+				"address": "address of daemon",
 			},
 			Method: "POST",
 		},
