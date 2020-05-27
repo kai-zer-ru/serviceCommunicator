@@ -11,7 +11,6 @@ import (
 )
 
 func sendCommand(w http.ResponseWriter, req *http.Request) {
-	//sendCommandStruct
 	logger.Info("start %s", funcName())
 	if req.Method != "POST" {
 		_, _ = io.WriteString(w, `{"error": "request method is not post"}`)
@@ -20,17 +19,17 @@ func sendCommand(w http.ResponseWriter, req *http.Request) {
 	decoder := json.NewDecoder(req.Body)
 	var commandData = sendCommandStruct{}
 	err := decoder.Decode(&commandData)
-	if err != nil {
-		logger.Error("error: %v", err)
+	if err != nil && err != io.EOF {
+		logger.Error("error decode request: %v", err)
 		_, _ = io.WriteString(w, fmt.Sprintf(`{"error": "%s"}`, err.Error()))
 		return
 	}
 	if commandData.DaemonName == "" {
-		_, _ = io.WriteString(w, `{"error": "no DaemonName in request"}`)
+		_, _ = io.WriteString(w, fmt.Sprintf(`{"error": "no DaemonName in request: %s"}`, commandData.toString()))
 		return
 	}
 	if commandData.Command == "" {
-		_, _ = io.WriteString(w, `{"error": "no Command in request"}`)
+		_, _ = io.WriteString(w, fmt.Sprintf(`{"error": "no Command in request: %s"}`, commandData.toString()))
 		return
 	}
 	daemon, ok := globalServices.Services[commandData.DaemonName]
@@ -67,13 +66,13 @@ func sendCommand(w http.ResponseWriter, req *http.Request) {
 		if commandData.NeedResponse {
 			resp, err := http.Get(urlAddress)
 			if err != nil {
-				_, _ = io.WriteString(w, fmt.Sprintf(`{"error": "%v"}`, err))
+				_, _ = io.WriteString(w, fmt.Sprintf(`{"error get response": "%v"}`, err))
 				return
 			}
 			responseData, err := ioutil.ReadAll(resp.Body)
 			if err != nil {
 				_ = resp.Body.Close()
-				_, _ = io.WriteString(w, fmt.Sprintf(`{"error": "%v"}`, err))
+				_, _ = io.WriteString(w, fmt.Sprintf(`{"error parse get response": "%v"}`, err))
 				return
 			}
 			_ = resp.Body.Close()
@@ -83,7 +82,7 @@ func sendCommand(w http.ResponseWriter, req *http.Request) {
 		go func() {
 			resp, err := http.Get(urlAddress)
 			if err != nil {
-				logger.Error("error: %v", err)
+				logger.Error("error get request: %v", err)
 				return
 			}
 			_ = resp.Body.Close()
@@ -95,25 +94,25 @@ func sendCommand(w http.ResponseWriter, req *http.Request) {
 	if commandData.NeedResponse {
 		req, err := http.NewRequest("POST", urlAddress, nil)
 		if err != nil {
-			logger.Error("error: %v", err)
+			logger.Error("error post request: %v", err)
 			return
 		}
 		req.Header.Add("Content-Type", `application/json`)
 		params, marshalErr := json.Marshal(commandData.Params)
 		if marshalErr != nil {
-			logger.Error("error: %v", marshalErr)
+			logger.Error("error parse params: %v", marshalErr)
 			return
 		}
 		req.Body = ioutil.NopCloser(bytes.NewBufferString(string(params)))
 		resp, err := httpClient.Do(req)
 		if err != nil {
-			_, _ = io.WriteString(w, fmt.Sprintf(`{"error": "%v"}`, err))
+			_, _ = io.WriteString(w, fmt.Sprintf(`{"error do post request": "%v"}`, err))
 			return
 		}
 		responseData, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
 			_ = resp.Body.Close()
-			_, _ = io.WriteString(w, fmt.Sprintf(`{"error": "%v"}`, err))
+			_, _ = io.WriteString(w, fmt.Sprintf(`{"error parse post response": "%v"}`, err))
 			return
 		}
 		_ = resp.Body.Close()
@@ -123,19 +122,19 @@ func sendCommand(w http.ResponseWriter, req *http.Request) {
 	go func() {
 		req, err := http.NewRequest("POST", urlAddress, nil)
 		if err != nil {
-			logger.Error("error: %v", err)
+			logger.Error("error post request: %v", err)
 			return
 		}
 		req.Header.Add("Content-Type", `application/json`)
 		params, marshalErr := json.Marshal(commandData.Params)
 		if marshalErr != nil {
-			logger.Error("error: %v", marshalErr)
+			logger.Error("error parse params: %v", marshalErr)
 			return
 		}
 		req.Body = ioutil.NopCloser(bytes.NewBufferString(string(params)))
 		resp, err := httpClient.Do(req)
 		if err != nil {
-			logger.Error("error: %v", err)
+			logger.Error("error do post request: %v", err)
 			return
 		}
 		_ = resp.Body.Close()
@@ -410,6 +409,7 @@ func ping() {
 			RequiredParams: []string{
 				"daemon_name",
 				"command",
+				"need_response",
 			},
 		},
 	}
