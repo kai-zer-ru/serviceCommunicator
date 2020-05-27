@@ -14,6 +14,7 @@ func main() {
 	numCPU := runtime.NumCPU()
 	runtime.GOMAXPROCS(numCPU)
 	fileDescriptor = flag.Int("fd", 0, "Server socket fileDescriptor")
+	getServices := flag.Bool("get", false, "")
 	flag.Parse()
 
 	logFile, _ := os.OpenFile("panic.log", os.O_WRONLY|os.O_CREATE|os.O_SYNC|os.O_TRUNC, os.FileMode(0644))
@@ -25,6 +26,16 @@ func main() {
 	err := initConfig()
 	if err != nil {
 		panic(err)
+	}
+
+	if *getServices {
+		data, err := redisCache.Get(serviceCommunicatorData)
+		if err != nil {
+			fmt.Printf("Error while get services: %v", err)
+			return
+		}
+		fmt.Println(data.(string))
+		return
 	}
 
 	globalServices = servicesStruct{}
