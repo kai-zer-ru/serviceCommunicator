@@ -22,7 +22,6 @@ func main() {
 
 	environment = GoEnvTools.GoEnv{}
 	_ = environment.InitEnv()
-	fmt.Printf("Process PID : %v\n", os.Getpid())
 	err := initConfig()
 	if err != nil {
 		panic(err)
@@ -41,7 +40,7 @@ func main() {
 		fmt.Println("No services data")
 		return
 	}
-
+	fmt.Printf("Process PID : %v\n", os.Getpid())
 	globalServices = servicesStruct{}
 	servicesData := map[string]serviceStruct{}
 	data, err := redisCache.Get(serviceCommunicatorData)
